@@ -6,5 +6,6 @@ dependencies:
   - matplotlib
   - sympy
   - pytest
+  - scipy
   - ipython
   - pip
