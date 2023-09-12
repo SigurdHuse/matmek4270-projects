@@ -51,10 +51,11 @@ class Wave1D:
         """
         D = sparse.diags([1, -2, 1], [-1, 0, 1], (self.N + 1, self.N + 1), "lil")
         if bc == 1:  # Neumann condition is baked into stencil
-            raise NotImplementedError
+            D[0, :2] = -2, 2
+            D[-1, -2:] = 2, -2
 
         elif bc == 3:  # periodic (Note u[0] = u[-1])
-            raise NotImplementedError
+            D[0, -2] = 1
 
         return D
 
@@ -83,10 +84,26 @@ class Wave1D:
             pass
 
         elif bc == 2:  # Open boundary
-            raise NotImplementedError
+            C, c = self.cfl, self.c
+            un, un1 = self.un, self.unm1
+            self.unp1[0] = (
+                2 * un[0]
+                - un1[0]
+                + C**2 * (un[1] - 2 * un[0] + self.dx / self.dt * un1[0] + c * un[1])
+            )
+
+            self.unp1[-1] = (
+                2 * un[-1]
+                - un1[-1]
+                + C**2
+                * (un[-2] - 2 * un[-1] + self.dx / self.dt * un1[-1] + c * un[-2])
+            )
+
+            self.unp1[0] /= 1 + c * C
+            self.unp1[-1] /= 1 + c * C
 
         elif bc == 3:
-            raise NotImplementedError
+            u[-1] = u[0]
 
         else:
             raise RuntimeError(f"Wrong bc = {bc}")
@@ -210,9 +227,8 @@ def test_pulse_bcs():
 
 
 if __name__ == "__main__":
-    # sol = Wave1D(100, cfl=1, L0=2, c0=1)
-    # data = sol(100, bc=3, save_step=1, ic=1)
-    # sol.animation(data)
-    # test_pulse_bcs()
+    sol = Wave1D(100, cfl=1, L0=2, c0=1)
+    data = sol(100, bc=1, save_step=5, ic=0)
+    sol.animation(data)
+    test_pulse_bcs()
     # data = sol(200, bc=2, ic=0, save_step=100)
-    pass
